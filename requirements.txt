@@ -1,0 +1,12 @@
+aiohttp==2.2.0
+async-timeout==1.2.1
+certifi==2017.4.17
+chardet==3.0.4
+future==0.16.0
+idna==2.5
+multidict==3.1.0
+pymongo==3.4.0
+python-telegram-bot==6.1.0
+requests==2.18.1
+urllib3==1.21.1
+yarl==0.10.3
