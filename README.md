@@ -1,4 +1,4 @@
-# Cindicator_arbitage_bot
+# CindicatorArbitageBot
 
 The bot is used for sending notifications when the price difference for a currency between different exchanges is higher than a set threshold.
 You can use these signals to monitor the possibility of favorable arbitrage between exchanges.
