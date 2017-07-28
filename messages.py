@@ -32,7 +32,7 @@ to monitor the possibility of favorable arbitrage between exchanges. \
 You can set your own threshold but make sure it covers the transaction costs. 
  
 I am currently monitoring eight exchanges: [Poloniex](poloniex.com), \
-[Kraken](kraken.com), [Okcoin](okcoin.com), [BTC-E](btc-e.com), \
+[Kraken](kraken.com), [Okcoin](okcoin.com), \
 [Gemini](gemini.com), [Bitstamp](bitstamp.net), [Bittrex](bittrex.com) and \
 [Bitfinex](bitfinex.com), but planning to add more very soon. \
 However, you can turn some exchanges off individually in your dashboard if you would like.
@@ -85,7 +85,7 @@ can be as high as 10–12%.
 
 *What currencies and exchanges are available?*
 Available exchanges: [Poloniex](poloniex.com), \
-[Kraken](kraken.com), [Okcoin](okcoin.com), [BTC-E](btc-e.com), \
+[Kraken](kraken.com), [Okcoin](okcoin.com), \
 [Gemini](gemini.com), [Bitstamp](bitstamp.net), [Bittrex](bittrex.com) and \
 [Bitfinex](bitfinex.com) \
 Available coins: [BTC](http://investopedia.com/terms/b/bitcoin.asp), \
@@ -114,7 +114,7 @@ set your own threshold but make sure it covers the transaction costs.
 
  
 Available exchanges: [Poloniex](poloniex.com), \
-[Kraken](kraken.com), [Okcoin](okcoin.com), [BTC-E](btc-e.com), \
+[Kraken](kraken.com), [Okcoin](okcoin.com), \
 [Gemini](gemini.com), [Bitstamp](bitstamp.net), [Bittrex](bittrex.com) and \
 [Bitfinex](bitfinex.com) \
 Available coins: [BTC](http://investopedia.com/terms/b/bitcoin.asp), \
