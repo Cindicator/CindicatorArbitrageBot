@@ -28,16 +28,31 @@ mongo_client = MongoClient(local_config.MONGO_HOST, local_config.MONGO_PORT)
 db = mongo_client[local_config.MONGO_DB]
 db.authenticate(local_config.MONGO_BOT_USER, local_config.MONGO_BOT_PASSWORD)
 
+
 # Dictionary that compares coin name with coin name on specific exchange
-coin_map = db.settings.find_one()['coin_map']
+def _coin_map():
+    return db.settings.find_one()['coin_map']
+coin_map = _coin_map()
+
+
 # All available coins
-coins = db.settings.find_one()['coin_map'].keys()
+def _coins():
+    return db.settings.find_one()['coin_map'].keys()
+coins = _coins()
+
+
 # Dictionary that compares exchange name from DB with real exchange name
-exchange_map = db.settings.find_one()['exchange_map']
+def _exchange_map():
+    return db.settings.find_one()['exchange_map']
+exchange_map = _exchange_map()
 # All available exchanges
 exchanges = list(set([exchange for coin in coins for exchange in coin_map[coin].keys()]))
+
+
 # Default settings for users
-default_settings = db.settings.find_one()['default_settings']
+def _default_settings():
+    return db.settings.find_one()['default_settings']
+default_settings = _default_settings()
 
 
 # Users collection
@@ -50,7 +65,7 @@ def get_users():
         :return: <list> of dict with user's data
         
     """
-    return db['users'].find({})
+    return list(db['users'].find({}))
 
 
 def add_user(msg, email):
@@ -195,7 +210,7 @@ def add_exchange(coin, exchange, price):
     """
     db['coins'].update({'name': coin},
                        {'$push': {'exchanges': {'name': exchange,
-                                          'price': price}}})
+                                                'price': price}}})
 
 
 def update_exchange(coin, exchange, price):
@@ -209,7 +224,109 @@ def update_exchange(coin, exchange, price):
          
     """
     db['coins'].find_and_modify(query={'name': coin, 'exchanges.name': exchange},
-                                update={"$set": {'exchanges.$.price': price}})
+                                update={'$set': {'exchanges.$.price': price}})
+
+
+# Coins history collection
+
+def get_coin_h(coin):
+    """
+    Return coin's data
+
+    Args:
+        :param coin: <string> coin name
+
+    Returns:
+        :return: <dict> with coin's data or None if coin doesn't exist
+
+    """
+    return db['coins_history'].find_one({'name': coin})
+
+
+def add_coin_h(coin):
+    """
+    Add new coin with emtpy exchange list to collection
+
+    Args:
+        :param coin: <string> coin name
+
+    """
+    db['coins_history'].insert_one({'name': coin, 'exchanges': []})
+
+
+def get_exchange_h(coin, exchange):
+    """
+    Return coin's data where coin contains specific exchange
+
+    Args:
+        :param coin: <string> coin name
+        :param exchange: <string> exchange name
+
+    Returns:
+        :return: <dict> with coin's data or None if that coin doesn't exist
+
+    """
+    return db['coins_history'].find_one({'name': coin, 'exchanges.name': exchange})
+
+
+def add_exchange_h(coin, exchange):
+    """
+    Add new exchange with empty coin's price history to coin's list  
+
+    Args:
+        :param coin: <string> coin name
+        :param exchange: <string> exchange name
+
+    """
+    db['coins_history'].update({'name': coin},
+                               {'$push': {'exchanges': {'name': exchange,
+                                                        'history': []}}})
+
+
+def add_price_to_exchange_h(coin, exchange, time, price):
+    """
+    Add coin's price on exchange and time when this price get to history
+
+    Args:
+        :param coin: <string> coin name
+        :param exchange: <string> exchange name 
+        :param time: <datetime.datetime> UTC time
+        :param price: <float> coin's price on exchange 
+
+    """
+    db['coins_history'].find_and_modify(query={'name': coin, 'exchanges.name': exchange},
+                                        update={'$push': {'exchanges.$.history': {'time': time,
+                                                                                  'price': price}}})
+
+
+def get_exchange_history(coin, exchange):
+    """
+    Return coin's price history on exchange
+
+    Args:
+        :param coin: <string> coin name
+        :param exchange: <string> exchange name
+        
+    Returns:
+        :return: <list> of coin's price history
+
+    """
+    return db['coins_history'].find_one({'name': coin, 'exchanges.name': exchange},
+                                        {'exchanges.$': 1})['exchanges'][0]['history']
+
+
+def update_exchange_h(coin, exchange, history):
+    """
+    Update coin's history on exchange
+
+    Args:
+        :param coin: <string> coin name
+        :param exchange: <string> exchange name 
+        :param history: <list> of dictionaries with next structure: {'time': <datetime.datetime>, 'price': <float>}
+            
+    """
+    db['coins_history'].find_and_modify(query={'name': coin, 'exchanges.name': exchange},
+                                        update={'$set': {'exchanges.$.history': history}})
 
 
 # Subscribers collection
@@ -225,8 +342,8 @@ def get_user_email(key):
         :return: <string> user's e-mail or None if subscriber doesn't exist
     
     """
-    user = db.subscribers.find_one({"key": str(key)})
+    user = db.subscribers.find_one({'key': str(key)})
     if user:
-        return user["email"]
+        return user['email']
     else:
         return None

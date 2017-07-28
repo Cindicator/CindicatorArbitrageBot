@@ -28,5 +28,5 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 crawler_logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
-    crawler = Crawler(coin_map=mq.coin_map, bd=mq, logger=crawler_logger)
+    crawler = Crawler(coin_map=mq.coin_map, db=mq, logger=crawler_logger)
     crawler.launch()
