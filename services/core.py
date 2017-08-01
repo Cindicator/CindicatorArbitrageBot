@@ -110,26 +110,36 @@ def crawl(chat_id):
     user_settings = mq.get_user_settings(chat_id)
     thresh = user_settings[base_config.THRESHOLD]
     user_coins = user_settings[base_config.COINS]
-    exchanges = user_settings[base_config.EXCHANGES]
+    user_exchanges = user_settings[base_config.EXCHANGES]
     res = []
     for user_coin in user_coins:
-        coin_doc = mq.get_coin(user_coin)
-        exchanges_list = []
-        for user_exch in exchanges:
-            exch_doc = list(filter(lambda coin_doc: coin_doc['name'] == user_exch, coin_doc['exchanges']))[0]
-            name = exch_doc['name']
-            value = exch_doc['price']
-            if value:
-                exchanges_list.append((name, value))
-        if len(exchanges_list) > 1:
-            combined_exchanges = combinations(exchanges_list, 2)
-            for exchanges_pair in combined_exchanges:
-                stocks_delta = round(abs(exchanges_pair[0][1] - exchanges_pair[1][1]) / max(exchanges_pair[0][1],
-                                                                                            exchanges_pair[1][1]) * 100,
-                                     2)
-                higher_stock, lower_stock = _stocks_price_checker(exchanges_pair[0], exchanges_pair[1])
-                if stocks_delta > thresh:
-                    res.append((coin_doc['name'].replace('/', '\_'), higher_stock, lower_stock, stocks_delta))
+        try:
+            coin_doc = mq.get_coin(user_coin)
+            exchanges_list = []
+            for user_exch in user_exchanges:
+                try:
+                    exch_doc_list = list(filter(lambda coin_doc: coin_doc['name'] == user_exch, coin_doc['exchanges']))
+                    if len(exch_doc_list) > 0:
+                        exch_doc = exch_doc_list[0]
+                        name = exch_doc['name']
+                        value = exch_doc['price']
+                        if value:
+                            exchanges_list.append((name, value))
+                except Exception as e:
+                    logger.warning('chat_id: {}; error: {}'.format(chat_id, str(e)))
+            if len(exchanges_list) > 1:
+                combined_exchanges = combinations(exchanges_list, 2)
+                for exchanges_pair in combined_exchanges:
+                    try:
+                        stocks_delta = round(abs(exchanges_pair[0][1] - exchanges_pair[1][1])
+                                             / max(exchanges_pair[0][1], exchanges_pair[1][1]) * 100, 2)
+                        higher_stock, lower_stock = _stocks_price_checker(exchanges_pair[0], exchanges_pair[1])
+                        if stocks_delta > thresh:
+                            res.append((coin_doc['name'].replace('/', '\_'), higher_stock, lower_stock, stocks_delta))
+                    except Exception as e:
+                        logger.warning('chat_id: {}; error: {}'.format(chat_id, str(e)))
+        except Exception as e:
+            logger.warning('chat_id: {}; error: {}'.format(chat_id, str(e)))
     return res
 
 
