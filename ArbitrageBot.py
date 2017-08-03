@@ -35,7 +35,7 @@ from services import (
 
 
 def launch():
-    updater = Updater(token=local_config.TOKEN)
+    updater = Updater(token=local_config.TOKEN, workers=64)
     dispatcher = updater.dispatcher
 
     available_commands = [CommandHandler('start', commands.start,

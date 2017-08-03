@@ -21,6 +21,8 @@ along with CindicatorArbitrageBot. If not, see <http://www.gnu.org/licenses/>.
 All methods has the same arguments signature which described in set_interval_dialog method. Not all methods
 may contain the whole list of described arguments"""
 
+from telegram.ext.dispatcher import run_async
+
 import messages
 import mongo_queries as mq
 from config import base as base_config
@@ -37,6 +39,7 @@ from services.core import (
 )
 
 
+@run_async
 def set_interval_dialog(bot, update, chat_data, job_queue):
     """
     Begin the dialog with for setting an interval value
@@ -64,8 +67,10 @@ def set_interval_dialog(bot, update, chat_data, job_queue):
             msg.reply_text(messages.SET_INTERVAL_SUCC_TEXT.format(interval),
                            reply_markup=kb_settings, parse_mode=messages.MARKDOWN)
         return SETTINGS_MENU
+    return SET_INTERVAL
 
 
+@run_async
 def set_threshold_dialog(bot, update):
     """
     Begin the dialog with for setting an threshold value
@@ -83,8 +88,10 @@ def set_threshold_dialog(bot, update):
         msg.reply_text(messages.SET_THRESHOLD_SUCC_TEXT.format(threshold),
                        reply_markup=kb_settings, parse_mode=messages.MARKDOWN)
         return SETTINGS_MENU
+    return SET_THRESHOLD
 
 
+@run_async
 def switch(bot, update, job_queue, chat_data):
     """Switch notifications on/off"""
 
@@ -92,8 +99,10 @@ def switch(bot, update, job_queue, chat_data):
         switch_off(bot, update, job_queue, chat_data)
     else:
         switch_on(bot, update, job_queue, chat_data)
+    return SETTINGS_MENU
 
 
+@run_async
 def interval(bot, update):
     """
     Send static message for interval setting
@@ -108,12 +117,15 @@ def interval(bot, update):
     return SET_INTERVAL
 
 
+@run_async
 def interval_help(bot, update):
     """Send static helper message for interval setting"""
 
     update.message.reply_text(messages.SET_INTERVAL_HELP_CONV_TEXT, parse_mode=messages.MARKDOWN)
+    return SET_INTERVAL
 
 
+@run_async
 def threshold(bot, update):
     """
     Send static message for threshold setting
@@ -128,12 +140,15 @@ def threshold(bot, update):
     return SET_THRESHOLD
 
 
+@run_async
 def threshold_help(bot, update):
     """Send static helper message for threshold setting"""
 
     update.message.reply_text(messages.SET_THRESHOLD_HELP_CONV_TEXT, parse_mode=messages.MARKDOWN)
+    return SET_THRESHOLD
 
 
+@run_async
 def alerts_settings(bot, update):
     """
     Open the menu for alerts settings
@@ -146,6 +161,7 @@ def alerts_settings(bot, update):
     return ALERTS_MENU
 
 
+@run_async
 def back_to_settings(bot, update):
     """
     Return user to settings menu

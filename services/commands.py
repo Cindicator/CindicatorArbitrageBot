@@ -21,6 +21,8 @@ along with CindicatorArbitrageBot. If not, see <http://www.gnu.org/licenses/>.
 All methods has the same arguments signature which described in start method. Not all methods
 may contain the whole list of described arguments"""
 
+from telegram.ext.dispatcher import run_async
+
 import messages
 import mongo_queries as mq
 from config import base as base_config
@@ -34,6 +36,7 @@ from services.core import (
 )
 
 
+# @run_async
 def start(bot, update, args, job_queue, chat_data):
     """
     Main entry point of the bot. This command starts the bot interface and checks user authorization.
@@ -107,6 +110,7 @@ def switch_off(bot, update, job_queue, chat_data):
     msg.reply_text(messages.NOTIFICATIONS_OFF_TEXT, parse_mode=messages.MARKDOWN)
 
 
+@run_async
 def set_interval(bot, update, args, chat_data, job_queue):
     """Set interval betwwen notifications in seconds"""
 
@@ -127,6 +131,7 @@ def set_interval(bot, update, args, chat_data, job_queue):
         msg.reply_text(messages.SET_INTERVAL_BIG_VALUE_EXCEPTION, parse_mode=messages.MARKDOWN)
 
 
+@run_async
 def set_threshold(bot, update, args):
     """Set the threshold between cryptocurrencies by which the bot will notify the user"""
 
@@ -146,6 +151,7 @@ def set_threshold(bot, update, args):
         msg.reply_text(messages.SET_THRESHOLD_BIG_VALUE_EXCEPTION, parse_mode=messages.MARKDOWN)
 
 
+@run_async
 def add_coin(bot, update, args):
     """Add coin to coins list by which the bot will notify the user"""
 
@@ -167,6 +173,7 @@ def add_coin(bot, update, args):
         msg.reply_text(messages.ADD_COIN_HELP_TEXT, parse_mode=messages.MARKDOWN)
 
 
+@run_async
 def remove_coin(bot, update, args):
     """Remove coin from coins list by which the bot will notify the user"""
 
@@ -185,6 +192,7 @@ def remove_coin(bot, update, args):
         msg.reply_text(messages.REMOVE_COIN_HELP_TEXT, parse_mode=messages.MARKDOWN)
 
 
+@run_async
 def show_your_coins(bot, update):
     """Show the user's coins list"""
 
@@ -193,6 +201,7 @@ def show_your_coins(bot, update):
                    parse_mode=messages.MARKDOWN)
 
 
+@run_async
 def add_exchange(bot, update, args):
     """Add exchange to exchanges list by which the bot will notify the user"""
 
@@ -216,6 +225,7 @@ def add_exchange(bot, update, args):
         msg.reply_text(messages.ADD_EXCHANGE_HELP_TEXT, parse_mode=messages.MARKDOWN)
 
 
+@run_async
 def remove_exchange(bot, update, args):
     """Remove exchange to exchanges list by which the bot will notify the user"""
 
@@ -235,6 +245,7 @@ def remove_exchange(bot, update, args):
         msg.reply_text(messages.REMOVE_EXCHANGE_HELP_TEXT, parse_mode=messages.MARKDOWN)
 
 
+@run_async
 def show_your_exchanges(bot, update):
     """Show user's exchanges list"""
 
@@ -243,14 +254,18 @@ def show_your_exchanges(bot, update):
                               parse_mode=messages.MARKDOWN)
 
 
+@run_async
 def default_response(bot, update):
-    update.message.reply_text(messages.HELLO_TEXT, parse_mode=messages.MARKDOWN)
+    update.message.reply_text(messages.HELLO_TEXT, reply_markup=kb_main, parse_mode=messages.MARKDOWN)
+    return MAIN_MENU
 
 
+@run_async
 def get_registration(bot, update):
     update.message.reply_text(messages.ABOUT_TEXT, parse_mode=messages.MARKDOWN)
     update.message.reply_text(messages.GET_REGISTRATION_TEXT, parse_mode=messages.MARKDOWN)
 
 
+@run_async
 def error(bot, update, error):
     logger.warning(messages.ERROR_TEXT.format(str(update), str(error)))

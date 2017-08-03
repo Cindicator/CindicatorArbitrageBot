@@ -21,6 +21,7 @@ along with CindicatorArbitrageBot. If not, see <http://www.gnu.org/licenses/>.
 
 import json
 import aiohttp
+from json.decoder import JSONDecodeError
 from traceback import format_exc
 from config import base as base_config
 
@@ -86,8 +87,11 @@ async def loader(coin, exchange, logger):
             response = await session.get(url)
             data = json.loads(await response.text())
             return float(PARSE_MAP[exchange](data, coin))
+    except JSONDecodeError as json_e:
+        logger.warning('Parse/GET exception in {} exchange for {} coin: {}\n'
+                       'response: {}\n'
+                       '{}'.format(exchange, coin, str(json_e), response.text(), format_exc()))
     except Exception as e:
-        logger.warning('Parse/GET exception in {} exchange for {} coin: {}'
+        logger.warning('Parse/GET exception in {} exchange for {} coin: {}\n'
                        '{}'.format(exchange, coin, str(e), format_exc()))
-        print(e)
         return None

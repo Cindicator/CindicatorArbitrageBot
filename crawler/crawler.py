@@ -132,11 +132,11 @@ class Crawler:
                         self._update(coin=coin, exchange=exchange, price=value)
                         await asyncio.sleep(sleep_time - (datetime.now() - stime).total_seconds())
                     except Exception as e:
-                        self.logger.warning('Exception in thread\'s loop ({} {}): {}'
+                        self.logger.warning('Exception in thread\'s loop ({} {}): {}\n'
                                             '{}'.format(exchange, coin, str(e), format_exc()))
                         await asyncio.sleep(sleep_time)
         except Exception as e:
-            self.logger.critical('Exception in crawler\'s thread ({} {}): {}'
+            self.logger.critical('Exception in crawler\'s thread ({} {}): {}\n'
                                  '{}'.format(exchange, coin, str(e), format_exc()))
             self.loop.stop()
 
@@ -153,7 +153,7 @@ class Crawler:
                                 new_history.append(timestamp)
                         self.db.update_exchange_h(coin=coin, exchange=exchange, history=new_history)
                     except Exception as e:
-                        self.logger.warning('Exception in history_cleaner ({} {}): {}'
+                        self.logger.warning('Exception in history_cleaner ({} {}): {}\n'
                                             '{}'.format(exchange, coin, str(e), format_exc()))
             await asyncio.sleep(self.h_update_time)
 
@@ -171,7 +171,7 @@ class Crawler:
                 asyncio.ensure_future(self.history_cleaner())
             self.loop.run_forever()
         except Exception as e:
-            self.logger.critical('Exception in creating crawler\'s threads: {}'
+            self.logger.critical('Exception in creating crawler\'s threads: {}\n'
                                  '{}'.format(str(e), format_exc()))
             self.loop.stop()
             self.loop.close()
