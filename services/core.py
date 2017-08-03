@@ -21,9 +21,12 @@ along with CindicatorArbitrageBot. If not, see <http://www.gnu.org/licenses/>.
 restart method"""
 
 import logging
+from traceback import format_exc
 from itertools import combinations
 
 from telegram import KeyboardButton, ReplyKeyboardMarkup
+from telegram.error import Unauthorized
+from telegram.ext.dispatcher import run_async
 
 import messages
 import config.base as base_config
@@ -118,7 +121,7 @@ def crawl(chat_id):
             exchanges_list = []
             for user_exch in user_exchanges:
                 try:
-                    exch_doc_list = list(filter(lambda coin_doc: coin_doc['name'] == user_exch, coin_doc['exchanges']))
+                    exch_doc_list = list(filter(lambda coin_exch: coin_exch['name'] == user_exch, coin_doc['exchanges']))
                     if len(exch_doc_list) > 0:
                         exch_doc = exch_doc_list[0]
                         name = exch_doc['name']
@@ -126,7 +129,8 @@ def crawl(chat_id):
                         if value:
                             exchanges_list.append((name, value))
                 except Exception as e:
-                    logger.warning('chat_id: {}; error: {}'.format(chat_id, str(e)))
+                    logger.warning('chat_id: {}; error: {}\n'
+                                   '{}'.format(chat_id, str(e), format_exc()))
             if len(exchanges_list) > 1:
                 combined_exchanges = combinations(exchanges_list, 2)
                 for exchanges_pair in combined_exchanges:
@@ -137,9 +141,11 @@ def crawl(chat_id):
                         if stocks_delta > thresh:
                             res.append((coin_doc['name'].replace('/', '\_'), higher_stock, lower_stock, stocks_delta))
                     except Exception as e:
-                        logger.warning('chat_id: {}; error: {}'.format(chat_id, str(e)))
+                        logger.warning('chat_id: {}; error: {}\n'
+                                       '{}'.format(chat_id, str(e), format_exc()))
         except Exception as e:
-            logger.warning('chat_id: {}; error: {}'.format(chat_id, str(e)))
+            logger.warning('chat_id: {}; error: {}\n'
+                           '{}'.format(chat_id, str(e), format_exc()))
     return res
 
 
@@ -154,7 +160,14 @@ def notify(bot, job):
     """
     res = crawl(job.context['chat_id'])
     if len(res) > 0:
-        bot.send_message(chat_id=job.context['chat_id'], text=_generate_string(res), parse_mode=messages.MARKDOWN)
+        try:
+            bot.send_message(chat_id=job.context['chat_id'], text=_generate_string(res), parse_mode=messages.MARKDOWN)
+        except Unauthorized:
+            job.schedule_removal()
+            mq.update_setting(job.context['chat_id'], setting=base_config.NOTIFICATIONS, value=False)
+        except Exception as e:
+            logger.warning('chat_id: {}; error: {}\n'
+                           '{}'.format(job.context['chat_id'], str(e), format_exc()))
 
 
 def restart_jobs(dispatcher, users):
@@ -169,15 +182,22 @@ def restart_jobs(dispatcher, users):
     job_queue = dispatcher.job_queue
     chat_data = dispatcher.chat_data
     for user in users:
-        if user[base_config.SETTINGS][base_config.NOTIFICATIONS]:
-            job = job_queue.run_repeating(notify, user[base_config.SETTINGS][base_config.INTERVAL],
-                                          context={'chat_id': user[base_config.CHAT_ID]})
-            chat_data[int(user[base_config.CHAT_ID])]['job'] = job
         try:
-            job_queue.bot.send_message(chat_id=int(user[base_config.CHAT_ID]), text=messages.RESTART_TEXT,
-                                       reply_markup=kb_entry_point, parse_mode='Markdown')
+            if user[base_config.SETTINGS][base_config.NOTIFICATIONS]:
+                job = job_queue.run_repeating(notify, user[base_config.SETTINGS][base_config.INTERVAL],
+                                              context={'chat_id': user[base_config.CHAT_ID]})
+                chat_data[int(user[base_config.CHAT_ID])]['job'] = job
+            try:
+                job_queue.bot.send_message(chat_id=int(user[base_config.CHAT_ID]), text=messages.RESTART_TEXT,
+                                           reply_markup=kb_entry_point, parse_mode='Markdown')
+            except Exception as e:
+                if 'job' in chat_data[int(user[base_config.CHAT_ID])]:
+                    chat_data[int(user[base_config.CHAT_ID])]['job'].schedule_removal()
+                logger.warning('chat_id: {}; error: {}\n'
+                               '{}'.format(user[base_config.CHAT_ID], str(e), format_exc()))
         except Exception as e:
-            logger.warning('chat_id: {}; error: {}'.format(user[base_config.CHAT_ID], str(e)))
+            logger.critical('chat_id: {}; error: {}\n'
+                            '{}'.format(user[base_config.CHAT_ID], str(e), format_exc()))
 
 
 def exchange_convert(exchanges):
