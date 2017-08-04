@@ -142,14 +142,14 @@ NOTIFICATIONS_OFF_TEXT = '*Success!* Notifications `disabled`.'
 # set interval text
 SET_INTERVAL_BAD_VALUE_TEXT = 'Interval must be bigger then 0!'
 SET_INTERVAL_SUCC_TEXT = '*Success!* New interval value: {}s.'
-SET_INTERVAL_HELP_TEXT = '*Usage*: /set_interval <`seconds`>'
+SET_INTERVAL_HELP_TEXT = '*Usage*: /set\_interval <`seconds`>'
 SET_INTERVAL_HELP_CONV_TEXT = 'Please enter a *integer* number or press Back.'
 SET_INTERVAL_BIG_VALUE_EXCEPTION = 'Too big value for interval'
 
 # set threshold text
 SET_THRESHOLD_BAD_VALUE_TEXT = 'Threshold must be bigger then 0'
 SET_THRESHOLD_SUCC_TEXT = '*Success!* New threshold value: {}%'
-SET_THRESHOLD_HELP_TEXT = '*Usage*: /set_threshold <`percents`>'
+SET_THRESHOLD_HELP_TEXT = '*Usage*: /set\_threshold <`percents`>'
 SET_THRESHOLD_HELP_CONV_TEXT = 'Please enter a *float* number or press Back.'
 SET_THRESHOLD_BIG_VALUE_EXCEPTION = 'Too big value for threshold'
 
@@ -169,7 +169,7 @@ ADD_COIN_SUCC_TEXT = """
 Now you have notifications on this coins:
 {}
 """
-ADD_COIN_HELP_TEXT = '*Usage*: /add_coin <`coin`>'
+ADD_COIN_HELP_TEXT = '*Usage*: /add\_coin <`coin`>'
 
 # remove coin text
 ALREADY_DISABLED_COIN = """
@@ -181,7 +181,7 @@ REMOVE_COIN_SUCC_TEXT = """
 Now you have notifications on this coins:
 {}
 """
-REMOVE_COIN_HELP_TEXT = '*Usage*: /remove_coin <`coin`>'
+REMOVE_COIN_HELP_TEXT = '*Usage*: /remove\_coin <`coin`>'
 
 ADD_REMOVE_COIN_HELP = """
 Please enter a valid coin or press Back.
@@ -204,7 +204,7 @@ ADD_EXCHANGE_SUCC_TEXT = """
 Now you have notifications on this exchanges:
 {}
 """
-ADD_EXCHANGE_HELP_TEXT = '*Usage*: /add_exchange <`exchange`>'
+ADD_EXCHANGE_HELP_TEXT = '*Usage*: /add\_exchange <`exchange`>'
 
 # remove exchange text
 ALREADY_DISABLED_EXCHANGE_TEXT = """
@@ -216,7 +216,7 @@ REMOVE_EXCHANGE_SUCC_TEXT = """
 Now you have notifications on this exchanges:
 {}
 """
-REMOVE_EXCHANGE_HELP_TEXT = '*Usage*: /remove_exchange <`exchange`>'
+REMOVE_EXCHANGE_HELP_TEXT = '*Usage*: /remove\_exchange <`exchange`>'
 
 ADD_REMOVE_EXCHANGE_HELP_TEXT = """
 Please enter a valid exchange or press Back.
