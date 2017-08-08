@@ -25,7 +25,7 @@ from traceback import format_exc
 from itertools import combinations
 
 from telegram import KeyboardButton, ReplyKeyboardMarkup
-from telegram.error import Unauthorized
+from telegram.error import Unauthorized, TimedOut
 from telegram.ext.dispatcher import run_async
 
 import messages
@@ -58,23 +58,32 @@ kb_back = ReplyKeyboardMarkup([[KeyboardButton('⬅Back')]], resize_keyboard=Tru
 kb_entry_point = ReplyKeyboardMarkup([[KeyboardButton('/start')]], resize_keyboard=True)
 
 
-def _stocks_price_checker(first_broker, second_broker):
+def _price_checker(exchanges_pair, threshold, coin_name):
     """
-    Return two exchange pairs: first pair have higher price on coin than second
-    
+    If bid price on one of two exchanges is bigger than ask price on another exchange,
+    than return tuple with next structure: (coin name, bid exchange name, ask exchange name,
+    diff in percent between bid and ask)
+
     Args:
-        :param first_broker: <pair>: (exchange name, coin's price on this exchange)
-        :param second_broker: <pair>: (exchange name, coin's price on this exchange)
-    
+        :param exchanges_pair: <list> with two <dict> with next structure:
+            {'name': exchange name, 'ask': best ask price, 'bid': best bid price}
+        :param threshold: <float> notification threshold
+        :param coin_name: <string> coin name
+
     Returns:
-        :return: higher_stock: <string> exchange name
-        :return: lower_stock: <string>: exchange name
-        
+        :return: coin_name: <string> coin name
+        :return: bid_exchange: <string> exchange name
+        :return: ask_exchange: <string> exchange name
+        :return: delta: <float> diff in percent between bid and ask
+
     """
-    if first_broker[1] > second_broker[1]:
-        return first_broker[0], second_broker[0]
-    else:
-        return second_broker[0], first_broker[0]
+    for bid_exchange, ask_exchange in [(exchanges_pair[0], exchanges_pair[1]),
+                                       (exchanges_pair[1], exchanges_pair[0])]:
+        if bid_exchange['bid'] > ask_exchange['ask']:
+            delta = round((bid_exchange['bid'] - ask_exchange['ask']) / ask_exchange['ask'] * 100, 2)
+            if delta > threshold:
+                return coin_name, bid_exchange['name'], ask_exchange['name'], delta
+    return None
 
 
 def _generate_string(data):
@@ -83,8 +92,8 @@ def _generate_string(data):
     
     Args:
         :param data: <list> of lists that contains 4 items: [coin name, first exchange name,
-            second exchange name, diff in percent between first and second exchange price on coin],
-            price on first exchange is higher than on second
+            second exchange name, diff in percent between bid and ask coin's price on exchanges],
+            bid price is higher than ask price 
         
     Returns:
         :return: <string> notification text 
@@ -99,19 +108,19 @@ def _generate_string(data):
 def crawl(chat_id):
     """
     Return list of lists that contains coin name, two exchanges names, and diff in percent between
-    prices on coin on this exchanges (diff always positive)
+    bid and ask on coin on this exchanges (diff always positive, bid bigger than ask)
     
     Args:
         :param chat_id: <int> or <string> user's chat id
          
     Returns:
         :return: <list> of lists that contains 4 items: [coin name, first exchange name,
-            second exchange name, diff in percent between first and second exchange price on coin],
-            price on first exchange is higher than on second
+            second exchange name, diff in percent between bid and ask coin's price on exchanges],
+            bid price is higher than ask price 
      
     """
     user_settings = mq.get_user_settings(chat_id)
-    thresh = user_settings[base_config.THRESHOLD]
+    threshold = user_settings[base_config.THRESHOLD]
     user_coins = user_settings[base_config.COINS]
     user_exchanges = user_settings[base_config.EXCHANGES]
     res = []
@@ -121,13 +130,15 @@ def crawl(chat_id):
             exchanges_list = []
             for user_exch in user_exchanges:
                 try:
-                    exch_doc_list = list(filter(lambda coin_exch: coin_exch['name'] == user_exch, coin_doc['exchanges']))
+                    exch_doc_list = list(filter(lambda coin_exch: coin_exch['name'] == user_exch,
+                                                coin_doc['exchanges']))
                     if len(exch_doc_list) > 0:
                         exch_doc = exch_doc_list[0]
                         name = exch_doc['name']
-                        value = exch_doc['price']
-                        if value:
-                            exchanges_list.append((name, value))
+                        ask = exch_doc['ask']
+                        bid = exch_doc['bid']
+                        if ask and bid:
+                            exchanges_list.append({'name': name, 'ask': ask, 'bid': bid})
                 except Exception as e:
                     logger.warning('chat_id: {}; error: {}\n'
                                    '{}'.format(chat_id, str(e), format_exc()))
@@ -135,11 +146,10 @@ def crawl(chat_id):
                 combined_exchanges = combinations(exchanges_list, 2)
                 for exchanges_pair in combined_exchanges:
                     try:
-                        stocks_delta = round(abs(exchanges_pair[0][1] - exchanges_pair[1][1])
-                                             / max(exchanges_pair[0][1], exchanges_pair[1][1]) * 100, 2)
-                        higher_stock, lower_stock = _stocks_price_checker(exchanges_pair[0], exchanges_pair[1])
-                        if stocks_delta > thresh:
-                            res.append((coin_doc['name'].replace('/', '\_'), higher_stock, lower_stock, stocks_delta))
+                        check_res = _price_checker(exchanges_pair=exchanges_pair, threshold=threshold,
+                                                   coin_name=coin_doc['name'].replace('/', '\_'))
+                        if check_res:
+                            res.append(check_res)
                     except Exception as e:
                         logger.warning('chat_id: {}; error: {}\n'
                                        '{}'.format(chat_id, str(e), format_exc()))
@@ -165,6 +175,9 @@ def notify(bot, job):
         except Unauthorized:
             job.schedule_removal()
             mq.update_setting(job.context['chat_id'], setting=base_config.NOTIFICATIONS, value=False)
+        except TimedOut:
+            logger.warning('chat_id: {}; error: {}'.format(job.context['chat_id'],
+                                                           'Time out while sending notification'))
         except Exception as e:
             logger.warning('chat_id: {}; error: {}\n'
                            '{}'.format(job.context['chat_id'], str(e), format_exc()))
@@ -201,6 +214,16 @@ def restart_jobs(dispatcher, users):
 
 
 def exchange_convert(exchanges):
+    """
+    Convert exchange name (or list of exchanges names) to name (names) from DB
+    
+    Args:
+        :param exchanges: <str> (or <list> of <str>'s) exchange name
+        
+    Returns:
+        :return: <str> (or <list> of <str>'s) DB exchange name
+        
+    """
     if type(exchanges) == str:
         return mq.exchange_map[exchanges]
     return [mq.exchange_map[exchange] for exchange in exchanges]

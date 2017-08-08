@@ -42,8 +42,8 @@ Don’t forget to follow us on [Twitter](twitter.com/Crowd_indicator) for the la
 
 ALERT_TEXT = """
 #{}
-The price is higher on *{}*
-than on *{}* by *{}%*
+Bid is higher on *{}*
+than ask on *{}* by *{}%*
 """
 
 CONTACTS_TEXT = """

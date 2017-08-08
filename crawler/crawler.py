@@ -23,7 +23,7 @@ import asyncio
 from datetime import datetime, timedelta
 from traceback import format_exc
 
-from crawler.data_loader import loader
+from crawler.data_loader import loader, exchange_loader
 
 
 class Crawler:
@@ -36,10 +36,11 @@ class Crawler:
             with structure like {exchange name (in db): coin name (on exchange), ...}
         :param db: <object> to interact with DB that contain next functions:
             get_coin(coin), add_coin(coin),
-            get_exchange(coin, exchange), add_exchange(coin, exchange, price), update_exchange(coin, exchange, price),
+            get_exchange(coin, exchange), add_exchange(coin, exchange), update_exchange(coin, exchange, ask, bid),
             get_coin_h(coin), add_coin_h(coin),
             get_exchange(coin, exchange), add_exchange_h(coin, exchange), get_exchange_history(coin, exchange),
-            add_price_to_exchange_h(coin, exchange, time, price), update_exchange_h(coin, exchange, history)
+            add_price_to_exchange_h(coin, exchange, time, ask, bid),
+            update_exchange_h(coin, exchange, history, current_time)
         :param logger: <logging.Logger> crawler's logger
         :param timeout: <int>[optional=1] frequency (in seconds) of requesting new data
         :param history: <bool>[optional=True] will write coins price history if True
@@ -60,32 +61,48 @@ class Crawler:
 
     async def _load(self, coin, exchange):
         """
-        Return the price on specific coin at which the last order executed on
-        specific exchange.
+        Return bid and ask price on specific coin/exchange pair.
         
         Args:
             :param coin: <string> coin name (on exchange)
             :param exchange: <string> exchange name
             
         Returns:
-            :return: <float> price
+            :return: <dict> with structure like: {'ask': best ask price, 'bid': best bid price}
             
         """
         return await loader(coin, exchange, self.logger)
 
-    def _update(self, coin, exchange, price):
+    async def _load_exchange(self, coins, exchange):
+        """
+        Return bid and ask prices of specific coins on specific exchange.
+
+        Args:
+            :param coins: <list> of <string> coin name (in db)
+            :param exchange: <string> exchange name
+
+        Returns:
+            :return: <dict> where keys is coins name and values is <dict> with
+            structure like: {'ask': best ask price, 'bid': best bid price}
+
+        """
+        return await exchange_loader(coins, exchange, self.logger)
+
+    def _update(self, coin, exchange, ask, bid):
         """
         Update price of specific coin on specific exchange in db
         
         Args:
             :param coin: <string> coin name (in db)
             :param exchange: <string> exchange name
-            :param price: <float> price
+            :param ask: <float> ask price
+            :param bid: <float> bid price
             
         """
-        self.db.update_exchange(coin=coin, exchange=exchange, price=price)
+        self.db.update_exchange(coin=coin, exchange=exchange, ask=ask, bid=bid)
         if self.history:
-            self.db.add_price_to_exchange_h(coin=coin, exchange=exchange, time=datetime.utcnow(), price=price)
+            self.db.add_price_to_exchange_h(coin=coin, exchange=exchange, time=datetime.utcnow(),
+                                            ask=ask, bid=bid)
 
     def _check_existing(self, coin, exchange):
         """
@@ -99,7 +116,7 @@ class Crawler:
         if not self.db.get_coin(coin=coin):
             self.db.add_coin(coin=coin)
         if not self.db.get_exchange(coin=coin, exchange=exchange):
-            self.db.add_exchange(coin=coin, exchange=exchange, price=None)
+            self.db.add_exchange(coin=coin, exchange=exchange)
 
         if self.history:
             if not self.db.get_coin_h(coin=coin):
@@ -110,7 +127,7 @@ class Crawler:
     async def load_and_update(self, coin, exchange):
         """
         Check availability of coin/exchange pair. If available start infinite loop
-        that gets new coin price from exchange site and updates this price in db
+        that gets new coin prices from exchange site and updates this prices in db
         
         Args:
             :param coin: <string> coin name (in db)
@@ -122,14 +139,14 @@ class Crawler:
         else:
             sleep_time = self.timeout
         try:
-            coin_name = self.coin_map[coin].get(exchange)
-            if coin_name is not None:
+            exchange_coin_name = self.coin_map[coin].get(exchange)
+            if exchange_coin_name is not None:
                 self._check_existing(coin=coin, exchange=exchange)
                 while True:
                     try:
                         stime = datetime.now()
-                        value = await self._load(coin=coin_name, exchange=exchange)
-                        self._update(coin=coin, exchange=exchange, price=value)
+                        coin_data = await self._load(coin=exchange_coin_name, exchange=exchange)
+                        self._update(coin=coin, exchange=exchange, ask=coin_data['ask'], bid=coin_data['bid'])
                         await asyncio.sleep(sleep_time - (datetime.now() - stime).total_seconds())
                     except Exception as e:
                         self.logger.warning('Exception in thread\'s loop ({} {}): {}\n'
@@ -138,6 +155,45 @@ class Crawler:
         except Exception as e:
             self.logger.critical('Exception in crawler\'s thread ({} {}): {}\n'
                                  '{}'.format(exchange, coin, str(e), format_exc()))
+        finally:
+            self.loop.stop()
+
+    async def load_and_update_exchange(self, coins, exchange):
+        """
+        Check availability of coins on exchange. For all available start infinite loop
+        that gets new coins prices from exchange site and updates this prices in db
+
+        Args:
+            :param coins: <list> of <string> coin name (in db)
+            :param exchange: <string> exchange name
+
+        """
+        try:
+            # coin_names_map: {exchange coin name: db coin name}
+            coin_names_map = {}
+            for coin in coins:
+                coin_name = self.coin_map[coin].get(exchange)
+                if coin_name is not None:
+                    self._check_existing(coin=coin, exchange=exchange)
+                    coin_names_map[coin_name] = coin
+            while True:
+                try:
+                    stime = datetime.now()
+                    coins_data = await self._load_exchange(coins=coin_names_map.keys(),
+                                                           exchange=exchange)
+                    for coin_name in coin_names_map.keys():
+                        self._update(coin=coin_names_map[coin_name], exchange=exchange,
+                                     ask=coins_data[coin_name]['ask'],
+                                     bid=coins_data[coin_name]['bid'])
+                    await asyncio.sleep(self.timeout - (datetime.now() - stime).total_seconds())
+                except Exception as e:
+                    self.logger.warning('Exception in thread\'s loop ({}): {}\n'
+                                        '{}'.format(exchange, str(e), format_exc()))
+                    await asyncio.sleep(self.timeout)
+        except Exception as e:
+            self.logger.critical('Exception in crawler\'s thread ({}): {}\n'
+                                 '{}'.format(exchange, str(e), format_exc()))
+        finally:
             self.loop.stop()
 
     async def history_cleaner(self):
@@ -151,7 +207,8 @@ class Crawler:
                         for timestamp in self.db.get_exchange_history(coin=coin, exchange=exchange):
                             if timestamp['time'] > time:
                                 new_history.append(timestamp)
-                        self.db.update_exchange_h(coin=coin, exchange=exchange, history=new_history)
+                        self.db.update_exchange_h(coin=coin, exchange=exchange, history=new_history,
+                                                  current_time=datetime.utcnow())
                     except Exception as e:
                         self.logger.warning('Exception in history_cleaner ({} {}): {}\n'
                                             '{}'.format(exchange, coin, str(e), format_exc()))
@@ -163,15 +220,23 @@ class Crawler:
         all available combinations of coins and exchanges).
         """
         try:
+            full_exchanges = {'poloniex': []}
             for coin in self.coin_map.keys():
                 for exchange in self.coin_map[coin].keys():
-                    asyncio.ensure_future(self.load_and_update(coin=coin,
-                                                               exchange=exchange))
+                    if exchange in ['poloniex']:
+                        full_exchanges[exchange].append(coin)
+                    else:
+                        asyncio.ensure_future(self.load_and_update(coin=coin,
+                                                                   exchange=exchange))
+            for exchange in full_exchanges.keys():
+                asyncio.ensure_future(self.load_and_update_exchange(coins=full_exchanges[exchange],
+                                                                    exchange=exchange))
             if self.history:
                 asyncio.ensure_future(self.history_cleaner())
             self.loop.run_forever()
         except Exception as e:
             self.logger.critical('Exception in creating crawler\'s threads: {}\n'
                                  '{}'.format(str(e), format_exc()))
+        finally:
             self.loop.stop()
             self.loop.close()

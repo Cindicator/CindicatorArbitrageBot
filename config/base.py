@@ -20,7 +20,6 @@ along with CindicatorArbitrageBot. If not, see <http://www.gnu.org/licenses/>.
 """This module contains constants (urls for exchanges and fields name in DB)"""
 
 # Exchanges url
-BTCE_URL = 'https://btc-e.nz/api/3/ticker/'
 POLONIEX_URL = 'https://poloniex.com/public?command=returnTicker'
 KRAKEN_URL = 'https://api.kraken.com/0/public/Ticker?pair='
 OKCOIN_URL = 'https://www.okcoin.com/api/v1/ticker.do?symbol='

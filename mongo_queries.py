@@ -19,6 +19,7 @@ along with CindicatorArbitrageBot. If not, see <http://www.gnu.org/licenses/>.
 
 """This module contains DB connection and functions for work with collections in it"""
 
+from math import ceil
 from pymongo import MongoClient
 from config import base as base_config
 from config import local as local_config
@@ -198,33 +199,35 @@ def get_exchange(coin, exchange):
     return db['coins'].find_one({'name': coin, 'exchanges.name': exchange})
 
 
-def add_exchange(coin, exchange, price):
+def add_exchange(coin, exchange):
     """
-    Add new exchange with coin's price to coin's list  
+    Add new exchange to coin's list  
     
     Args:
         :param coin: <string> coin name
         :param exchange: <string> exchange name 
-        :param price: <float> coin's price on exchange
          
     """
     db['coins'].update({'name': coin},
                        {'$push': {'exchanges': {'name': exchange,
-                                                'price': price}}})
+                                                'ask': None,
+                                                'bid': None}}})
 
 
-def update_exchange(coin, exchange, price):
+def update_exchange(coin, exchange, ask, bid):
     """
     Update coin's price on exchange
     
     Args:
         :param coin: <string> coin name
         :param exchange: <string> exchange name 
-        :param price: <float> coin's price on exchange 
+        :param ask: <float> coin's ask price on exchange 
+        :param bid: <float> coin's bid price on exchange
          
     """
     db['coins'].find_and_modify(query={'name': coin, 'exchanges.name': exchange},
-                                update={'$set': {'exchanges.$.price': price}})
+                                update={'$set': {'exchanges.$.ask': ask,
+                                                 'exchanges.$.bid': bid}})
 
 
 # Coins history collection
@@ -280,10 +283,10 @@ def add_exchange_h(coin, exchange):
     """
     db['coins_history'].update({'name': coin},
                                {'$push': {'exchanges': {'name': exchange,
-                                                        'history': []}}})
+                                                        'history': {str(hour): [] for hour in range(25)}}}})
 
 
-def add_price_to_exchange_h(coin, exchange, time, price):
+def add_price_to_exchange_h(coin, exchange, time, ask, bid):
     """
     Add coin's price on exchange and time when this price get to history
 
@@ -291,12 +294,14 @@ def add_price_to_exchange_h(coin, exchange, time, price):
         :param coin: <string> coin name
         :param exchange: <string> exchange name 
         :param time: <datetime.datetime> UTC time
-        :param price: <float> coin's price on exchange 
+        :param ask: <float> coin's ask price on exchange
+        :param bid: <float> coin's bid price on exchange 
 
     """
     db['coins_history'].find_and_modify(query={'name': coin, 'exchanges.name': exchange},
-                                        update={'$push': {'exchanges.$.history': {'time': time,
-                                                                                  'price': price}}})
+                                        update={'$push': {'exchanges.$.history.0': {'time': time,
+                                                                                    'ask': ask,
+                                                                                    'bid': bid}}})
 
 
 def get_exchange_history(coin, exchange):
@@ -311,22 +316,32 @@ def get_exchange_history(coin, exchange):
         :return: <list> of coin's price history
 
     """
-    return db['coins_history'].find_one({'name': coin, 'exchanges.name': exchange},
+    db_history = db['coins_history'].find_one({'name': coin, 'exchanges.name': exchange},
                                         {'exchanges.$': 1})['exchanges'][0]['history']
+    history = []
+    for hour in range(25):
+        history += db_history[str(hour)]
+    return history
 
 
-def update_exchange_h(coin, exchange, history):
+def update_exchange_h(coin, exchange, history, current_time):
     """
     Update coin's history on exchange
 
     Args:
         :param coin: <string> coin name
         :param exchange: <string> exchange name 
-        :param history: <list> of dictionaries with next structure: {'time': <datetime.datetime>, 'price': <float>}
+        :param history: <list> of dictionaries with next structure:
+        {'time': <datetime.datetime>, 'price': {'ask': <float>, 'bid': <float>}}
+        :param current_time: <datetime.datetime> current UTC time
             
     """
+    db_history = {str(hour): [] for hour in range(25)}
+    for timestamp in history:
+        hour = ceil((current_time - timestamp['time']).total_seconds() / 3600)
+        db_history[str(hour)].append(timestamp)
     db['coins_history'].find_and_modify(query={'name': coin, 'exchanges.name': exchange},
-                                        update={'$set': {'exchanges.$.history': history}})
+                                        update={'$set': {'exchanges.$.history': db_history}})
 
 
 # Subscribers collection
