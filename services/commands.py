@@ -33,7 +33,8 @@ from services.core import (
     kb_main,
     MAIN_MENU,
     BLACK_HOLE,
-    SETTINGS_MENU, kb_settings)
+    kb_entry_point
+)
 
 
 # @run_async
@@ -280,16 +281,23 @@ def show_your_exchanges(bot, update):
 
 @run_async
 def default_response(bot, update):
+    """Return user to the main menu if user text something unexpectable"""
     update.message.reply_text(messages.HELLO_TEXT, reply_markup=kb_main, parse_mode=messages.MARKDOWN)
     return MAIN_MENU
 
 
 @run_async
 def get_registration(bot, update):
+    """Show user about and get registration text if user is unauthorized"""
     update.message.reply_text(messages.ABOUT_TEXT, parse_mode=messages.MARKDOWN)
     update.message.reply_text(messages.GET_REGISTRATION_TEXT, parse_mode=messages.MARKDOWN)
     return BLACK_HOLE
 
 
+@run_async
 def error(bot, update, error):
+    """Throw out user from conversation if error occur"""
     logger.warning(messages.ERROR_TEXT.format(str(update), str(error)))
+    update.message.reply_text('Error occur. Please type /start and we can communicate again.',
+                              reply_markup=kb_entry_point, parse_mode=messages.MARKDOWN)
+    return -1

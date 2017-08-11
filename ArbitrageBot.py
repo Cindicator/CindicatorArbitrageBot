@@ -20,8 +20,10 @@ along with CindicatorArbitrageBot. If not, see <http://www.gnu.org/licenses/>.
 
 """This module contains method for launching bot"""
 
-from telegram.ext import Updater
-from telegram.ext import CommandHandler, ConversationHandler, RegexHandler
+import telegram.bot
+from telegram.ext import messagequeue as mqueue
+from telegram.ext import Updater, CommandHandler, ConversationHandler, RegexHandler
+from telegram.utils.request import Request
 
 import mongo_queries as mq
 from config import local as local_config
@@ -34,8 +36,33 @@ from services import (
 )
 
 
+class ArbitrageBot(telegram.bot.Bot):
+    """
+    Subclass of <telegram.bot.Bot> that implements <telegram.ext.messagequeue.MessageQueue>
+    to avoid spam limits
+    
+    Attributes:
+        :param is_queued_def: <bool>[optional=True] use MessageQueue (True) or not (False)
+        :param msg_queue: <telegram.ext.messagequeue.MessageQueue>[optional=None]
+            MessageQueue instance
+        
+    """
+    def __init__(self, *args, is_queued_def=True, msg_queue=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        # For decorator usage
+        self._is_messages_queued_default = is_queued_def
+        self._msg_queue = msg_queue or mqueue.MessageQueue()
+
+    @mqueue.queuedmessage
+    def send_message(self, *args, **kwargs):
+        super().send_message(*args, **kwargs)
+
+
 def launch():
-    updater = Updater(token=local_config.TOKEN, workers=64)
+    msg_queue = mqueue.MessageQueue(all_burst_limit=29, all_time_limit_ms=1017)
+    request = Request(con_pool_size=4 + local_config.WORKERS_NUM)
+    bot = ArbitrageBot(local_config.TOKEN, request=request, msg_queue=msg_queue)
+    updater = Updater(bot=bot, workers=local_config.WORKERS_NUM)
     dispatcher = updater.dispatcher
 
     available_commands = [CommandHandler('start', commands.start,
@@ -93,11 +120,19 @@ def launch():
                                              pass_chat_data=True,
                                              pass_job_queue=True),
                                 RegexHandler('^(⬅Back)$', settings.back_to_settings),
+                                CommandHandler('start', commands.start,
+                                               pass_args=True,
+                                               pass_job_queue=True,
+                                               pass_chat_data=True),
                                 RegexHandler('\w*', settings.interval_help)
                                 ],
 
             core.SET_THRESHOLD: [RegexHandler('^([0-9]+(\.[0-9]*){0,1})$', settings.set_threshold_dialog),
                                  RegexHandler('^(⬅Back)$', settings.back_to_settings),
+                                 CommandHandler('start', commands.start,
+                                                pass_args=True,
+                                                pass_job_queue=True,
+                                                pass_chat_data=True),
                                  RegexHandler('\w*', settings.threshold_help)
                                  ],
 
@@ -105,6 +140,10 @@ def launch():
                                 RegexHandler('^([rR][mM][ \t\n\r]+[A-Za-z]{3}/[A-Za-z]{3})$', alerts.remove_coin_dialog),
                                 RegexHandler('^([aA][lL][lL])$', alerts.show_all_coins),
                                 RegexHandler('^(⬅Back)$', alerts.back_to_alerts),
+                                CommandHandler('start', commands.start,
+                                               pass_args=True,
+                                               pass_job_queue=True,
+                                               pass_chat_data=True),
                                 RegexHandler('\w*', alerts.coins_help)
                                 ],
 
@@ -112,6 +151,10 @@ def launch():
                              RegexHandler('^([rR][mM][ \t\n\r]+[-\w]+)$', alerts.remove_exchange_dialog),
                              RegexHandler('^([aA][lL][lL])$', alerts.show_all_exchanges),
                              RegexHandler('^(⬅Back)$', alerts.back_to_alerts),
+                             CommandHandler('start', commands.start,
+                                            pass_args=True,
+                                            pass_job_queue=True,
+                                            pass_chat_data=True),
                              RegexHandler('\w*', alerts.ex_help)
                              ],
 
