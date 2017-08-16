@@ -268,6 +268,11 @@ Hello, my friend! I was updated and became a little better. Your notifications a
 are the same. Just type /start and we can communicate again.
 """
 
+OFFLINE_TEXT = """
+Hello, my friend! I'm currently updating and offline because of that. \
+But soon I'll become better and come back.
+"""
+
 ERROR_TEXT = 'Update {} caused error {}'
 
 BACK_TEXT = 'Ok'

@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with CindicatorArbitrageBot. If not, see <http://www.gnu.org/licenses/>.
 """
 
-"""This module contains method for launching bot"""
+"""This module contains ArbitrageBot class and method for launching bot"""
 
 import telegram.bot
 from telegram.ext import messagequeue as mqueue

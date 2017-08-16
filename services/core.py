@@ -202,7 +202,7 @@ def restart_jobs(dispatcher, users):
                 chat_data[int(user[base_config.CHAT_ID])]['job'] = job
             try:
                 job_queue.bot.send_message(chat_id=int(user[base_config.CHAT_ID]), text=messages.RESTART_TEXT,
-                                           reply_markup=kb_entry_point, parse_mode='Markdown')
+                                           reply_markup=kb_entry_point, parse_mode=messages.MARKDOWN)
             except Exception as e:
                 if 'job' in chat_data[int(user[base_config.CHAT_ID])]:
                     chat_data[int(user[base_config.CHAT_ID])]['job'].schedule_removal()
