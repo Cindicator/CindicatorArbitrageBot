@@ -11,7 +11,7 @@ instruments on different markets or in different forms. Arbitrage exists as a re
 
 ### Registration
 
-To start the bot working, a user must register on cindicator.com/arbitrage-bot by entering their email address.
+To start the bot working, a user must register on https://cindicator.com/arbitrage-bot by entering their email address.
 Users will then receive a link to the telegram bot with a randomly generated unique hash key.
 By following the link, users will be automatically registered in the system and can start to communicate with the bot and receive notifications.
 

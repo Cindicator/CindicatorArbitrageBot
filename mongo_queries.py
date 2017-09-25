@@ -101,6 +101,20 @@ def get_user(chat_id):
     return db['users'].find_one({base_config.CHAT_ID: str(chat_id)})
 
 
+def get_user_by_email(email):
+    """
+    Return user's data 
+    
+    Args:
+        :param email: <string> user's email
+    
+    Returns
+        :return: <dict> with user's data or None if user doesn't exist
+        
+    """
+    return db['users'].find_one({base_config.EMAIL: email})
+
+
 def get_user_settings(chat_id):
     """
     Return settings for specific user
@@ -357,7 +371,7 @@ def get_user_email(key):
         :return: <string> user's e-mail or None if subscriber doesn't exist
     
     """
-    user = db.subscribers.find_one({'key': str(key)})
+    user = db['subscribers'].find_one({'key': str(key)})
     if user:
         return user['email']
     else:

@@ -63,7 +63,7 @@ def start(bot, update, args, job_queue, chat_data):
         else:
             key = args[0]
             email = mq.get_user_email(key)
-            if not email:
+            if not email or mq.get_user_by_email(email):
                 msg.reply_text(messages.AUTHORIZATION_FAIL_TEXT, parse_mode=messages.MARKDOWN)
                 return BLACK_HOLE
             else:
@@ -298,6 +298,7 @@ def get_registration(bot, update):
 def error(bot, update, error):
     """Throw out user from conversation if error occur"""
     logger.warning(messages.ERROR_TEXT.format(str(update), str(error)))
-    update.message.reply_text('Error occur. Please type /start and we can communicate again.',
-                              reply_markup=kb_entry_point, parse_mode=messages.MARKDOWN)
+    if update and update.message:
+        update.message.reply_text('Error occur. Please type /start and we can communicate again.',
+                                  reply_markup=kb_entry_point, parse_mode=messages.MARKDOWN)
     return -1

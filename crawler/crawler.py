@@ -199,20 +199,25 @@ class Crawler:
     async def history_cleaner(self):
         """Clean history from old prices"""
         while True:
-            for coin in self.coin_map.keys():
-                for exchange in self.coin_map[coin].keys():
-                    try:
-                        new_history = []
-                        time = datetime.utcnow() - timedelta(days=self.h_threshold_time)
-                        for timestamp in self.db.get_exchange_history(coin=coin, exchange=exchange):
-                            if timestamp['time'] > time:
-                                new_history.append(timestamp)
-                        self.db.update_exchange_h(coin=coin, exchange=exchange, history=new_history,
-                                                  current_time=datetime.utcnow())
-                    except Exception as e:
-                        self.logger.warning('Exception in history_cleaner ({} {}): {}\n'
-                                            '{}'.format(exchange, coin, str(e), format_exc()))
-            await asyncio.sleep(self.h_update_time)
+            try:
+                for coin in self.coin_map.keys():
+                    for exchange in self.coin_map[coin].keys():
+                        try:
+                            new_history = []
+                            time = datetime.utcnow() - timedelta(days=self.h_threshold_time)
+                            for timestamp in self.db.get_exchange_history(coin=coin, exchange=exchange):
+                                if timestamp['time'] > time:
+                                    new_history.append(timestamp)
+                            self.db.update_exchange_h(coin=coin, exchange=exchange, history=new_history,
+                                                      current_time=datetime.utcnow())
+                        except Exception as e:
+                            self.logger.warning('Exception in history_cleaner ({} {}): {}\n'
+                                                '{}'.format(exchange, coin, str(e), format_exc()))
+            except Exception as e:
+                self.logger.warning('Exception in history_cleaner: {}\n'
+                                    '{}'.format(str(e), format_exc()))
+            finally:
+                await asyncio.sleep(self.h_update_time)
 
     def launch(self):
         """

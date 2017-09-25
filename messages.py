@@ -142,16 +142,22 @@ NOTIFICATIONS_OFF_TEXT = '*Success!* Notifications `disabled`.'
 # set interval text
 SET_INTERVAL_BAD_VALUE_TEXT = 'Interval must be bigger then 0!'
 SET_INTERVAL_SUCC_TEXT = '*Success!* New interval value: {}s.'
-SET_INTERVAL_HELP_TEXT = '*Usage*: /set\_interval <`seconds`>'
 SET_INTERVAL_HELP_CONV_TEXT = 'Please enter a *integer* number or press Back.'
 SET_INTERVAL_BIG_VALUE_EXCEPTION = 'Too big value for interval'
+SET_INTERVAL_HELP_TEXT = """
+*Usage*: /set\_interval <`seconds`>
+Example: `/set_interval 900` 
+"""
 
 # set threshold text
 SET_THRESHOLD_BAD_VALUE_TEXT = 'Threshold must be bigger then 0'
 SET_THRESHOLD_SUCC_TEXT = '*Success!* New threshold value: {}%'
-SET_THRESHOLD_HELP_TEXT = '*Usage*: /set\_threshold <`percents`>'
 SET_THRESHOLD_HELP_CONV_TEXT = 'Please enter a *float* number or press Back.'
 SET_THRESHOLD_BIG_VALUE_EXCEPTION = 'Too big value for threshold'
+SET_THRESHOLD_HELP_TEXT = """
+*Usage*: /set\_threshold <`percents`>
+Example: `/set_threshold 5`
+"""
 
 # add coin text
 UNSUPPORTED_COIN_TEXT = """
@@ -159,17 +165,16 @@ Sorry, we do not support this coin.
 Please, choose from:
 {}
 """
-UNSUPPORTED_COIN_CONV_TEXT = """
-Sorry, coin `{}` not available.
-To see all available coins print: all
-"""
 ALREADY_ENABLED_COIN = 'You already have notification on coin `{}`'
 ADD_COIN_SUCC_TEXT = """
 *Success!* Coin added.
 Now you have notifications on this coins:
 {}
 """
-ADD_COIN_HELP_TEXT = '*Usage*: /add\_coin <`coin`>'
+ADD_COIN_HELP_TEXT = """
+*Usage*: /add\_coin <`coin`>
+Example: `/add_coin BTC/USD`
+"""
 
 # remove coin text
 ALREADY_DISABLED_COIN = """
@@ -181,8 +186,15 @@ REMOVE_COIN_SUCC_TEXT = """
 Now you have notifications on this coins:
 {}
 """
-REMOVE_COIN_HELP_TEXT = '*Usage*: /remove\_coin <`coin`>'
+REMOVE_COIN_HELP_TEXT = """
+*Usage*: /remove\_coin <`coin`>
+Example: `/remove_coin BTC/USD`
+"""
 
+UNSUPPORTED_COIN_CONV_TEXT = """
+Sorry, coin `{}` not available.
+To see all available coins print: all
+"""
 ADD_REMOVE_COIN_HELP = """
 Please enter a valid coin or press Back.
 To see all available coins print: all
@@ -194,17 +206,16 @@ Sorry, we do not support this exchange.
 Please, choose from:
 {}
 """
-UNSUPPORTED_EXCHANGE_CONV_TEXTS = """
-Sorry, exchange `{}` not available.
-To see all available exchanges print: all
-"""
-ALREADY_ENABLED_EXCHANGE_TEXT = 'You already have notification on exchange {}'
+ALREADY_ENABLED_EXCHANGE_TEXT = 'You already have notification on exchange `{}`'
 ADD_EXCHANGE_SUCC_TEXT = """  
 *Success!* Exchange added.
 Now you have notifications on this exchanges:
 {}
 """
-ADD_EXCHANGE_HELP_TEXT = '*Usage*: /add\_exchange <`exchange`>'
+ADD_EXCHANGE_HELP_TEXT = """
+*Usage*: /add\_exchange <`exchange`>
+Example: `/add_exchange Poloniex`
+"""
 
 # remove exchange text
 ALREADY_DISABLED_EXCHANGE_TEXT = """
@@ -216,8 +227,15 @@ REMOVE_EXCHANGE_SUCC_TEXT = """
 Now you have notifications on this exchanges:
 {}
 """
-REMOVE_EXCHANGE_HELP_TEXT = '*Usage*: /remove\_exchange <`exchange`>'
+REMOVE_EXCHANGE_HELP_TEXT = """
+*Usage*: /remove\_exchange <`exchange`>
+Example: `/remove_exchange Poloniex`
+"""
 
+UNSUPPORTED_EXCHANGE_CONV_TEXTS = """
+Sorry, exchange `{}` not available.
+To see all available exchanges print: all
+"""
 ADD_REMOVE_EXCHANGE_HELP_TEXT = """
 Please enter a valid exchange or press Back.
 To see all available exchanges print: all
@@ -246,9 +264,10 @@ Please, enter new value as number or press Back.
 ADD_RM_COINS_TEXT = """
 *You have notifications on this coins*:
 {}
-*To add coin print*: add <`coin`>
+*To add coin print*: add <`coin`> 
 *To remove coin print*: rm <`coin`>
 *To see all available coins print*: all
+*Example*:  `add BTC/USD`
 """
 
 ADD_RM_EX_TEXT = """
@@ -257,6 +276,7 @@ ADD_RM_EX_TEXT = """
 *To add exchange print*: add <`exchange`>
 *To remove exchange print*: rm <`exchange`>
 *To see all available exchanges print*: all
+*Example*:  `add Poloniex`
 """
 
 SETTINGS_MENU_TEXT = 'Here is your settings'
