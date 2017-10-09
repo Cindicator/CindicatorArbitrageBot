@@ -47,7 +47,7 @@ def _exchange_map():
     return db.settings.find_one()['exchange_map']
 exchange_map = _exchange_map()
 # All available exchanges
-exchanges = exchange_map.kyes()
+exchanges = exchange_map.keys()
 
 
 # Default settings for users
