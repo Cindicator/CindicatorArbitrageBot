@@ -77,7 +77,7 @@ PARSE_MAP = {
 
 async def loader(coin, exchange, logger):
     """
-    Retrieve data from exchange and return best bid and ask prices.
+    Retrieve data from exchange and return best bid and ask prices on specific coin.
     
     Args:
         :param coin: <string> coin name (on exchange)
@@ -111,7 +111,7 @@ async def loader(coin, exchange, logger):
 
 async def exchange_loader(coins, exchange, logger):
     """
-    Retrieve data from exchange and return best bid and ask coins prices.
+    Retrieve data from exchange and return best bid and ask prices on exchange coins.
     
     Args:
         :param coins: <list> of <string> coin name (in db)

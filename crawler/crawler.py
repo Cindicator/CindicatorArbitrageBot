@@ -228,7 +228,7 @@ class Crawler:
             full_exchanges = {'poloniex': []}
             for coin in self.coin_map.keys():
                 for exchange in self.coin_map[coin].keys():
-                    if exchange in ['poloniex']:
+                    if exchange in full_exchanges.keys():
                         full_exchanges[exchange].append(coin)
                     else:
                         asyncio.ensure_future(self.load_and_update(coin=coin,

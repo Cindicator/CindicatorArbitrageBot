@@ -47,7 +47,7 @@ def _exchange_map():
     return db.settings.find_one()['exchange_map']
 exchange_map = _exchange_map()
 # All available exchanges
-exchanges = list(set([exchange for coin in coins for exchange in coin_map[coin].keys()]))
+exchanges = exchange_map.kyes()
 
 
 # Default settings for users
@@ -210,7 +210,13 @@ def get_exchange(coin, exchange):
         :return: <dict> with coin's data or None if that coin doesn't exist
         
     """
-    return db['coins'].find_one({'name': coin, 'exchanges.name': exchange})
+    coin = get_coin(coin)
+    if coin:
+        for exchange_ in coin['exchanges']:
+            if exchange_['name'] == exchange:
+                return exchange_
+    else:
+        return None
 
 
 def add_exchange(coin, exchange):
