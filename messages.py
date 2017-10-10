@@ -31,7 +31,7 @@ exchanges is higher than your threshold. Use these signals \
 to monitor the possibility of favorable arbitrage between exchanges. \
 You can set your own threshold but make sure it covers the transaction costs. 
  
-I am currently monitoring eight exchanges: [Poloniex](poloniex.com), \
+I am currently monitoring seven exchanges: [Poloniex](poloniex.com), \
 [Kraken](kraken.com), [Okcoin](okcoin.com), \
 [Gemini](gemini.com), [Bitstamp](bitstamp.net), [Bittrex](bittrex.com) and \
 [Bitfinex](bitfinex.com), but planning to add more very soon. \
