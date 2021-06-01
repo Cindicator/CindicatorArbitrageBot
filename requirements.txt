@@ -8,5 +8,5 @@ multidict==3.1.0
 pymongo==3.4.0
 python-telegram-bot==7.0.1
 requests==2.18.1
-urllib3==1.21.1
+urllib3==1.26.5
 yarl==0.10.3
